@@ -17,6 +17,7 @@ bot.OnMessage += async (Message msg, UpdateType type) => {
 };
 
 Log.Information($"@{me.Username} is running... Press Enter to terminate");
+
 Console.ReadLine();
 
 cts.Cancel();
