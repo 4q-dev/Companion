@@ -27,14 +27,14 @@ public static class Subscribe {
         client.OnMessage += async (Message msg, UpdateType type) => {
             if (msg.Text is null || msg.Text != message(msg)) { return; }
             Log.Information($"Received {type} '{msg.Text}' in {msg.Chat}");
-            var generate_ctx = () => {
+            var generateCtx = () => {
                 var user_ctx = new UserContext(client);
                 ctxs[msg.Chat.Id] = user_ctx;
                 return user_ctx;
             };
 
             var ctx = ctxs[msg.Chat.Id] switch {
-                null => generate_ctx(),
+                null => generateCtx(),
                 var user_ctx => user_ctx,
             };
 
