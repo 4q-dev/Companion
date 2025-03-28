@@ -31,13 +31,13 @@ public static class Subscribe {
             Log.Information($"Received {type} '{msg.Text}' in {msg.Chat}");
 
             var generateCtx = () => {
-                var user_ctx = new UserContext(client);
-                return user_ctx;
+                var userCtx = new UserContext(client);
+                return userCtx;
             };
 
-            var ctx = ctxs.TryGetValue(msg.Chat.Id, out var userCtx) switch {
-                false => generateCtx(),
-                true => userCtx,
+            var ctx = ctxs[msg.Chat.Id] switch {
+                null => generateCtx(),
+                var userCtx => userCtx,
             };
 
             ctx.MessageHistory.Add(msg);
