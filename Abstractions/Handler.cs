@@ -31,11 +31,11 @@ public static class Subscribe {
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> update, Func<UserContext, Task> handler) =>
+    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> message, Func<UserContext, Task> handler) =>
         OnUpdate(client,
             (rupdate) => {
                 if (rupdate.Type == UpdateType.Message) {
-                    if (rupdate.Message!.Text != update(rupdate.Message!)) {
+                    if (rupdate.Message!.Text != message(rupdate.Message!)) {
                         return Error.Failure();
                     }
                 }
