@@ -6,7 +6,7 @@ using Serilog;
 namespace Zazagram.Services;
 
 internal static class LlmService {
-    private static HttpClient httpClient = ConstructClient();
+    private static readonly HttpClient httpClient = ConstructClient();
 
     private static HttpClient ConstructClient() {
         var client = new HttpClient();
@@ -15,14 +15,14 @@ internal static class LlmService {
         return client;
     }
 
-    public async static Task<Result<String>> Recognize(String userinput, List<(String command, String desc)> commands) {
+    public static async Task<Result<String>> Recognize(String userinput, List<(String command, String desc)> commands) {
         var res = await httpClient.PostAsync("https://api.groq.com/openai/v1/chat/completions", new StringContent(JsonSerializer.Serialize(new {
             model = "llama-3.3-70b-versatile",
             messages = new List<Object> {
                 new {
                     role = "user",
                     content = userinput,
-                }
+               }
             }
         })));
 
@@ -39,6 +39,7 @@ internal static class LlmService {
 
         return content;
     }
+
     internal class ChatCompletionResponse {
         public String? id { get; set; }
         public String? @object { get; set; }

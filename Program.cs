@@ -1,7 +1,6 @@
 ﻿using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 using Zazagram.Abstractions;
 using Zazagram.Services;
 
@@ -11,7 +10,10 @@ var bot = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOK
 
 Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
     if (ctx.RecievedMessage is not null) {
-        await bot.SendMessage(ctx.RecievedMessage.Chat.Id, String.Join(" ", ctx.UpdateHistory.FindAll(u => u.Message?.Text is not null).Select(u => u.Message!.Text)));
+        await bot.SendMessage(ctx.RecievedMessage.Chat.Id,
+                String.Join(" ", ctx.UpdateHistory
+                    .FindAll(u => u.Message?.Text is not null)
+                    .Select(u => u.Message!.Text)));
         await bot.SendMessage(ctx.RecievedMessage.Chat.Id, "бебра отправлена");
     }
 });

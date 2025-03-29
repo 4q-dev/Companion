@@ -19,7 +19,7 @@ public class UserContext(TelegramBotClient botClient) {
     public List<IState> StateHistory { get; set; } = [];
     public IState CurrentState => StateHistory.Last();
 
-    public TelegramBotClient BotClient = botClient;
+    public TelegramBotClient BotClient => botClient;
 }
 
 public static class Subscribe {
@@ -27,11 +27,11 @@ public static class Subscribe {
     // абсолют сперма
     private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>>, OnUpdateHandler)> handlers = [];
 
-    public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
-        OnMessage(client, (_) => message, handler);
+    public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler)
+        => OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> message, Func<UserContext, Task> handler) =>
-        OnUpdate(client,
+    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> message, Func<UserContext, Task> handler)
+        => OnUpdate(client,
             (rupdate) => {
                 if (rupdate.Type == UpdateType.Message) {
                     if (rupdate.Message!.Text != message(rupdate.Message!)) {
@@ -78,7 +78,7 @@ public static class Subscribe {
     }
 
     public static void SubscribeAll(TelegramBotClient client) {
-        client.OnUpdate += (update) => {
+        client.OnUpdate += static (update) => {
             foreach (var (predicate, handler) in handlers) {
                 var p = predicate(update);
                 if (p.IsSuccess) {
@@ -90,7 +90,7 @@ public static class Subscribe {
                     }
                 }
             }
-            return Task.FromResult(() => { });
+            return Task.FromResult(static () => { });
         };
     }
 
@@ -109,7 +109,7 @@ public static class Subscribe {
             UpdateType.ChatJoinRequest => update.ChatJoinRequest!.Chat.Id,
             UpdateType.ChatBoost => update.ChatBoost!.Chat.Id,
             UpdateType.RemovedChatBoost => update.RemovedChatBoost!.Chat.Id,
-            _ => throw new Exception("Update doen't contain id")
+            _ => throw new ArgumentException("Update doen't contain id")
         };
     }
 }
