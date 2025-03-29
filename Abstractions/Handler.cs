@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Telegram.Bot;
@@ -10,8 +11,9 @@ namespace Abstractions;
 public interface IState { }
 
 public class UserContext(TelegramBotClient botClient) {
-    public List<Message> MessageHistory { get; set; } = [];
-    public Message RecievedMessage => MessageHistory.Last();
+    public List<Update> UpdateHistory { get; set; } = [];
+    public Update RecievedUpdate => UpdateHistory.Last();
+    public Message? RecievedMessage => UpdateHistory.FindLast(static (u) => u.Type == UpdateType.Message)?.Message;
 
     public List<IState> StateHistory { get; set; } = [];
     public IState CurrentState => StateHistory.Last();
@@ -25,24 +27,57 @@ public static class Subscribe {
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, String> message, Func<UserContext, Task> handler) {
-        client.OnMessage += async (Message msg, UpdateType type) => {
-            if (msg.Text is null || msg.Text != message(msg)) { return; }
-            Log.Information($"Received {type} '{msg.Text}' in {msg.Chat}");
+    public static void OnMessage(TelegramBotClient client, Func<Message, String> update, Func<UserContext, Task> handler) =>
+        OnUpdate(client,
+            (rupdate) => {
+                if (rupdate.Type == UpdateType.Message) {
+                    update(rupdate.Message!);
+                }
+                return UpdateType.Message;
+            },
+            handler
+        );
+
+    public static void OnUpdate(TelegramBotClient client, Func<Update, UpdateType> updateType, Func<UserContext, Task> handler) {
+        client.OnUpdate += async (Update recievedUpdate) => {
+            if (recievedUpdate is null || recievedUpdate.Type != updateType(recievedUpdate)) {
+                return;
+            }
 
             var generateCtx = () => {
                 var userCtx = new UserContext(client);
                 return userCtx;
             };
 
-            var ctx = ctxs[msg.Chat.Id] switch {
-                null => generateCtx(),
-                var userCtx => userCtx,
+            var chatId = ExtractId(recievedUpdate);
+
+            var ctx = ctxs.TryGetValue(chatId, out var userCtx) switch {
+                false => generateCtx(),
+                true => userCtx,
             };
 
-            ctx.MessageHistory.Add(msg);
+            ctx.UpdateHistory.Add(recievedUpdate);
 
             await handler(ctx);
+        };
+    }
+
+    public static Int64 ExtractId(Update update) {
+        return update.Type switch {
+            UpdateType.Message => update.Message!.Chat.Id,
+            UpdateType.EditedMessage => update.EditedMessage!.Chat.Id,
+            UpdateType.ChannelPost => update.ChannelPost!.Chat.Id,
+            UpdateType.EditedChannelPost => update.EditedChannelPost!.Chat.Id,
+            UpdateType.EditedBusinessMessage => update.EditedBusinessMessage!.Chat.Id,
+            UpdateType.DeletedBusinessMessages => update.DeletedBusinessMessages!.Chat.Id,
+            UpdateType.MessageReaction => update.MessageReaction!.Chat.Id,
+            UpdateType.MessageReactionCount => update.MessageReactionCount!.Chat.Id,
+            UpdateType.MyChatMember => update.MyChatMember!.Chat.Id,
+            UpdateType.ChatMember => update.ChatMember!.Chat.Id,
+            UpdateType.ChatJoinRequest => update.ChatJoinRequest!.Chat.Id,
+            UpdateType.ChatBoost => update.ChatBoost!.Chat.Id,
+            UpdateType.RemovedChatBoost => update.RemovedChatBoost!.Chat.Id,
+            _ => throw new Exception("Update doen't contain id")
         };
     }
 }
