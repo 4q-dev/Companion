@@ -64,7 +64,7 @@ public static class Subscribe {
                 .Match(
                     async ok => {
                         var chatId = ExtractId(ok);
-                        var ctx = ctxs.GetOrAdd(chatId, generateCtx());
+                        var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
 
                         ctx.UpdateHistory.Add(recievedUpdate);
                         await handler(ctx);
