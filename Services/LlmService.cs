@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
+using ResultSharp.Core;
+using ResultSharp.Errors;
 using Serilog;
 
 namespace Zazagram.Services;
+
 internal static class LlmService {
     private static HttpClient httpClient = ConstructClient();
 
@@ -19,7 +15,7 @@ internal static class LlmService {
         return client;
     }
 
-    public async static Task<String> Recognize(String userinput, List<(String command, String desc)> commands) {
+    public async static Task<Result<String>> Recognize(String userinput, List<(String command, String desc)> commands) {
         var res = await httpClient.PostAsync("https://api.groq.com/openai/v1/chat/completions", new StringContent(JsonSerializer.Serialize(new {
             model = "llama-3.3-70b-versatile",
             messages = new List<Object> {
@@ -37,8 +33,8 @@ internal static class LlmService {
         var responseObject = JsonSerializer.Deserialize<ChatCompletionResponse>(jsonResponse);
 
         var content = responseObject?.choices?[0].message?.content switch {
-            null => "",
-            var c => c
+            null => Error.Failure("Error epta"),
+            var c => Result.Success(c)
         };
 
         return content;

@@ -1,5 +1,6 @@
 ﻿using Abstractions;
 using Microsoft.VisualBasic;
+using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
 using Zazagram.Services;
 
@@ -28,8 +29,8 @@ Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
 
 Subscribe.OnMessage(bot, (msg) => msg.Text ?? "", async (ctx) => {
     if (ctx.RecievedMessage?.Text is not null) {
-        var res = await LlmService.Recognize(ctx.RecievedMessage.Text, []);
-        await bot.SendMessage(ctx.RecievedMessage.Chat.Id, res);
+        (await LlmService.Recognize(ctx.RecievedMessage.Text, [])).Map(
+            async ok => await bot.SendMessage(ctx.RecievedMessage.Chat.Id, ok));
     }
 });
 
