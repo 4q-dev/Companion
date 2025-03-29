@@ -11,7 +11,7 @@ internal static class LlmService {
     private static HttpClient ConstructClient() {
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Environment.GetEnvironmentVariable("ZAZAGROK_TOKEN")}");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Environment.GetEnvironmentVariable("GROQZAZA_TOKEN")}");
         return client;
     }
 

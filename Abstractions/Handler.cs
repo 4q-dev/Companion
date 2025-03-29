@@ -6,6 +6,7 @@ using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using static Telegram.Bot.TelegramBotClient;
 
 namespace Zazagram.Abstractions;
 
@@ -24,6 +25,8 @@ public class UserContext(TelegramBotClient botClient) {
 
 public static class Subscribe {
     private static readonly ConcurrentDictionary<Int64, UserContext> ctxs = [];
+    // абсолют сперма
+    private static readonly ConcurrentStack<(Func<Update, Result<UpdateType>>, OnUpdateHandler)> handlers = [];
 
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
@@ -32,7 +35,9 @@ public static class Subscribe {
         OnUpdate(client,
             (rupdate) => {
                 if (rupdate.Type == UpdateType.Message) {
-                    update(rupdate.Message!);
+                    if (rupdate.Message!.Text != update(rupdate.Message!)) {
+                        return Error.Failure();
+                    }
                 }
                 return UpdateType.Message;
             },
@@ -40,7 +45,7 @@ public static class Subscribe {
         );
 
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
-        client.OnUpdate += (recievedUpdate) => {
+        handlers.Push((subscriptionPredicate, (recievedUpdate) => {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
                 if (update is Update u) {
                     var evaluatedUpdateType = updateType(update);
@@ -72,10 +77,28 @@ public static class Subscribe {
                 );
 
             return Task.FromResult(() => { });
+        }
+        ));
+    }
+
+    public static void SubscribeAll(TelegramBotClient client) {
+        client.OnUpdate += (update) => {
+            foreach (var (predicate, handler) in handlers) {
+                var p = predicate(update);
+                if (p.IsSuccess) {
+                    var pred = p.Unwrap();
+                    if (pred == update.Type) {
+                        handler(update);
+                        Console.WriteLine("bebra");
+                        break;
+                    }
+                }
+            }
+            return Task.FromResult(() => { });
         };
     }
 
-    public static Int64 ExtractId(Update update) {
+    private static Int64 ExtractId(Update update) {
         return update.Type switch {
             UpdateType.Message => update.Message!.Chat.Id,
             UpdateType.EditedMessage => update.EditedMessage!.Chat.Id,
