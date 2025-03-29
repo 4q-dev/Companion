@@ -30,6 +30,19 @@ public static class Subscribe {
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler)
         => OnMessage(client, (_) => message, handler);
 
+    public static void OnMessage(TelegramBotClient client, Func<Message, Boolean> isMessageValid, Func<UserContext, Task> handler)
+        => OnUpdate(client,
+            (recievedUpdate) => {
+                if (recievedUpdate.Type == UpdateType.Message) {
+                    if (!isMessageValid(recievedUpdate.Message!)) {
+                        return Error.Failure();
+                    }
+                }
+                return UpdateType.Message;
+            },
+            handler
+        );
+
     public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> checkMessage, Func<UserContext, Task> handler)
         => OnUpdate(client,
             (recievedUpdate) => {
@@ -76,13 +89,14 @@ public static class Subscribe {
     public static void SubscribeAll(TelegramBotClient client) {
         client.OnUpdate += static (update) => {
             foreach (var (predicate, handler) in handlers) {
-                if (predicate(update).Then(p => {
-                    if (p == update.Type) {
+                var p = predicate(update);
+                if (p.IsSuccess) {
+                    var pred = p.Unwrap();
+                    if (pred == update.Type) {
                         handler(update);
-                        return Result.Success();
+                        break;
                     }
-                    return Error.Failure();
-                }).IsSuccess) { break; };
+                }
             }
             return Task.FromResult(static () => { });
         };

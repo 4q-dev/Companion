@@ -2,11 +2,14 @@
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
 using Zazagram.Abstractions;
+using Zazagram.Modules;
 using Zazagram.Services;
 
 LoggingConfigure.ConfigureLogging();
 
 var bot = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!);
+
+RolesModule.Register(bot);
 
 Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
     if (ctx.RecievedMessage is not null) {
