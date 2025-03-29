@@ -26,7 +26,7 @@ public class UserContext(TelegramBotClient botClient) {
 public static class Subscribe {
     private static readonly ConcurrentDictionary<Int64, UserContext> ctxs = [];
     // абсолют сперма
-    private static readonly ConcurrentStack<(Func<Update, Result<UpdateType>>, OnUpdateHandler)> handlers = [];
+    private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>>, OnUpdateHandler)> handlers = [];
 
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
@@ -45,7 +45,7 @@ public static class Subscribe {
         );
 
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
-        handlers.Push((subscriptionPredicate, (recievedUpdate) => {
+        handlers.Enqueue((subscriptionPredicate, (recievedUpdate) => {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
                 if (update is Update u) {
                     var evaluatedUpdateType = updateType(update);
