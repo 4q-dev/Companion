@@ -18,7 +18,7 @@ internal static class LlmService {
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {Environment.GetEnvironmentVariable("ZAZAGROK_TOKEN")}");
         return client;
     }
-    // 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
+
     public async static Task<String> Recognize(String userinput, List<(String command, String desc)> commands) {
         var res = await httpClient.PostAsync("https://api.groq.com/openai/v1/chat/completions", new StringContent(JsonSerializer.Serialize(new {
             model = "llama-3.3-70b-versatile",
