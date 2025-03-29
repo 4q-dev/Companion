@@ -1,8 +1,8 @@
-﻿using Abstractions;
-using ResultSharp.Errors;
+﻿using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Zazagram.Abstractions;
 using Zazagram.Services;
 
 LoggingConfigure.ConfigureLogging();

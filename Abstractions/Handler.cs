@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Concurrent;
 using ResultSharp.Core;
 using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
-using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Abstractions;
+namespace Zazagram.Abstractions;
 
 public interface IState { }
 
@@ -26,7 +22,7 @@ public class UserContext(TelegramBotClient botClient) {
 }
 
 public static class Subscribe {
-    private static ConcurrentDictionary<Int64, UserContext> ctxs = [];
+    private static readonly ConcurrentDictionary<Int64, UserContext> ctxs = [];
 
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
@@ -43,7 +39,7 @@ public static class Subscribe {
         );
 
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
-        client.OnUpdate += (Update recievedUpdate) => {
+        client.OnUpdate += (recievedUpdate) => {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
                 if (update is null) {
                     return Error.Failure();
