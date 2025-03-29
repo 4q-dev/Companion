@@ -1,6 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using ResultSharp.Core;
+using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -27,7 +30,7 @@ public static class Subscribe {
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler) =>
         OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, String> update, Func<UserContext, Task> handler) =>
+    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> update, Func<UserContext, Task> handler) =>
         OnUpdate(client,
             (rupdate) => {
                 if (rupdate.Type == UpdateType.Message) {
@@ -38,16 +41,24 @@ public static class Subscribe {
             handler
         );
 
-    public static void OnUpdate(TelegramBotClient client, Func<Update, UpdateType> updateType, Func<UserContext, Task> handler) {
+    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
         client.OnUpdate += async (Update recievedUpdate) => {
-            if (recievedUpdate is null || recievedUpdate.Type != updateType(recievedUpdate)) {
+            static Boolean isUpdateTypeValid(Update update, Func<Update, Result<UpdateType>> updateType) {
+                var evaluatedUpdateType = updateType(update);
+                if (evaluatedUpdateType.IsFailure) {
+                    return false;
+                }
+                return update.Type != evaluatedUpdateType.Unwrap();
+            }
+
+            if (recievedUpdate is null || !isUpdateTypeValid(recievedUpdate, subscriptionPredicate)) {
                 return;
             }
 
-            var generateCtx = () => {
+            UserContext generateCtx() {
                 var userCtx = new UserContext(client);
                 return userCtx;
-            };
+            }
 
             var chatId = ExtractId(recievedUpdate);
 

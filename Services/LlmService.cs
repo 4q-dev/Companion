@@ -39,41 +39,40 @@ internal static class LlmService {
 
         return content;
     }
-}
+    internal class ChatCompletionResponse {
+        public String? id { get; set; }
+        public String? @object { get; set; }
+        public Int64 created { get; set; }
+        public String? model { get; set; }
+        public List<Choice>? choices { get; set; }
+        public Usage? usage { get; set; }
+        public String? systemFingerprint { get; set; }
+        public XGroq? xGroq { get; set; }
+    }
 
-public class ChatCompletionResponse {
-    public String? id { get; set; }
-    public String? @object { get; set; }
-    public Int64 created { get; set; }
-    public String? model { get; set; }
-    public List<Choice>? choices { get; set; }
-    public Usage? usage { get; set; }
-    public String? systemFingerprint { get; set; }
-    public XGroq? xGroq { get; set; }
-}
+    internal class Choice {
+        public Int32 index { get; set; }
+        public Message? message { get; set; }
+        public Object? logprobs { get; set; }
+        public String? finishReason { get; set; }
+    }
 
-public class Choice {
-    public Int32 index { get; set; }
-    public Message? message { get; set; }
-    public Object? logprobs { get; set; }
-    public String? finishReason { get; set; }
-}
+    internal class Message {
+        public String? role { get; set; }
+        public String? content { get; set; }
+    }
 
-public class Message {
-    public String? role { get; set; }
-    public String? content { get; set; }
-}
+    internal class Usage {
+        public Double queueTime { get; set; }
+        public Int32 promptTokens { get; set; }
+        public Double promptTime { get; set; }
+        public Int32 completionTokens { get; set; }
+        public Double completionTime { get; set; }
+        public Int32 totalTokens { get; set; }
+        public Double totalTime { get; set; }
+    }
 
-public class Usage {
-    public Double queueTime { get; set; }
-    public Int32 promptTokens { get; set; }
-    public Double promptTime { get; set; }
-    public Int32 completionTokens { get; set; }
-    public Double completionTime { get; set; }
-    public Int32 totalTokens { get; set; }
-    public Double totalTime { get; set; }
-}
-
-public class XGroq {
-    public String? id { get; set; }
+    internal class XGroq {
+        public String? id { get; set; }
+    }
 }

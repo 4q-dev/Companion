@@ -1,7 +1,8 @@
 ﻿using Abstractions;
-using Microsoft.VisualBasic;
+using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Zazagram.Services;
 
 LoggingConfigure.ConfigureLogging();
@@ -27,7 +28,7 @@ Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
 //    }
 //});
 
-Subscribe.OnMessage(bot, (msg) => msg.Text ?? "", async (ctx) => {
+Subscribe.OnMessage(bot, (msg) => msg.Text is String msgText ? msgText : Error.Failure(""), async (ctx) => {
     if (ctx.RecievedMessage?.Text is not null) {
         (await LlmService.Recognize(ctx.RecievedMessage.Text, [])).Match(
                 async ok => await bot.SendMessage(ctx.RecievedMessage.Chat.Id, ok),
