@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Http.HttpResults;
 using ResultSharp.Core;
 using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
@@ -41,14 +42,13 @@ public static class Subscribe {
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
         client.OnUpdate += (recievedUpdate) => {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
-                if (update is null) {
+                if (update is Update u) {
+                    var evaluatedUpdateType = updateType(update);
+                    return evaluatedUpdateType.Then(updt => u.Type == updt ? Result.Success(u) : Error.Failure());
+                }
+                else {
                     return Error.Failure();
                 }
-                var evaluatedUpdateType = updateType(update);
-                if (evaluatedUpdateType.IsFailure) {
-                    return Error.Failure();
-                }
-                return update.Type == evaluatedUpdateType.Unwrap() ? Result.Success(update) : Error.Failure();
             }
 
             UserContext generateCtx() {
