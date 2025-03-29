@@ -11,7 +11,7 @@ namespace Zazagram.Abstractions;
 
 public interface IState { }
 
-public class UserContext(TelegramBotClient botClient) {
+public class UserContext(TelegramBotClient client) {
     public List<Update> UpdateHistory { get; set; } = [];
     public Update RecievedUpdate => UpdateHistory.Last();
     public Message? RecievedMessage => UpdateHistory.FindLast(static (u) => u.Type == UpdateType.Message)?.Message;
@@ -19,22 +19,22 @@ public class UserContext(TelegramBotClient botClient) {
     public List<IState> StateHistory { get; set; } = [];
     public IState CurrentState => StateHistory.Last();
 
-    public TelegramBotClient BotClient => botClient;
+    public TelegramBotClient BotClient => client;
 }
 
 public static class Subscribe {
     private static readonly ConcurrentDictionary<Int64, UserContext> ctxs = [];
     // абсолют сперма
-    private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>>, OnUpdateHandler)> handlers = [];
+    private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>> predicate, OnUpdateHandler handler)> handlers = [];
 
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler)
         => OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> message, Func<UserContext, Task> handler)
+    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> checkMessage, Func<UserContext, Task> handler)
         => OnUpdate(client,
-            (rupdate) => {
-                if (rupdate.Type == UpdateType.Message) {
-                    if (rupdate.Message!.Text != message(rupdate.Message!)) {
+            (recievedUpdate) => {
+                if (recievedUpdate.Type == UpdateType.Message) {
+                    if (recievedUpdate.Message!.Text != checkMessage(recievedUpdate.Message!)) {
                         return Error.Failure();
                     }
                 }
@@ -43,16 +43,13 @@ public static class Subscribe {
             handler
         );
 
-    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
-        handlers.Enqueue((subscriptionPredicate, (recievedUpdate) => {
-            static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
-                if (update is Update u) {
-                    var evaluatedUpdateType = updateType(update);
-                    return evaluatedUpdateType.Then(updt => u.Type == updt ? Result.Success(u) : Error.Failure());
-                }
-                else {
-                    return Error.Failure();
-                }
+    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> checkUpdateType, Func<UserContext, Task> handler) {
+        handlers.Enqueue((checkUpdateType, (recievedUpdate) => {
+            static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> checkUpdateType) {
+                return update is Update u
+                    ? checkUpdateType(update)
+                        .Then(checkedUpdateType => u.Type == checkedUpdateType ? Result.Success(u) : Error.Failure())
+                    : Error.Failure();
             }
 
             UserContext generateCtx() {
@@ -60,12 +57,11 @@ public static class Subscribe {
                 return userCtx;
             }
 
-            isUpdateTypeValid(recievedUpdate, subscriptionPredicate)
+            isUpdateTypeValid(recievedUpdate, checkUpdateType)
                 .Match(
                     async ok => {
                         var chatId = ExtractId(ok);
                         var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
-
                         ctx.UpdateHistory.Add(recievedUpdate);
                         await handler(ctx);
                     },
@@ -80,15 +76,13 @@ public static class Subscribe {
     public static void SubscribeAll(TelegramBotClient client) {
         client.OnUpdate += static (update) => {
             foreach (var (predicate, handler) in handlers) {
-                var p = predicate(update);
-                if (p.IsSuccess) {
-                    var pred = p.Unwrap();
-                    if (pred == update.Type) {
+                if (predicate(update).Then(p => {
+                    if (p == update.Type) {
                         handler(update);
-                        Console.WriteLine("bebra");
-                        break;
+                        return Result.Success();
                     }
-                }
+                    return Error.Failure();
+                }).IsSuccess) { break; };
             }
             return Task.FromResult(static () => { });
         };
