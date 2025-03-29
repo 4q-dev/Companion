@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using ResultSharp.Core;
+using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
 using Serilog;
 using Telegram.Bot;
@@ -42,17 +43,16 @@ public static class Subscribe {
         );
 
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> subscriptionPredicate, Func<UserContext, Task> handler) {
-        client.OnUpdate += async (Update recievedUpdate) => {
-            static Boolean isUpdateTypeValid(Update update, Func<Update, Result<UpdateType>> updateType) {
+        client.OnUpdate += (Update recievedUpdate) => {
+            static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> updateType) {
+                if (update is null) {
+                    return Error.Failure();
+                }
                 var evaluatedUpdateType = updateType(update);
                 if (evaluatedUpdateType.IsFailure) {
-                    return false;
+                    return Error.Failure();
                 }
-                return update.Type != evaluatedUpdateType.Unwrap();
-            }
-
-            if (recievedUpdate is null || !isUpdateTypeValid(recievedUpdate, subscriptionPredicate)) {
-                return;
+                return update.Type == evaluatedUpdateType.Unwrap() ? Result.Success(update) : Error.Failure();
             }
 
             UserContext generateCtx() {
@@ -60,16 +60,22 @@ public static class Subscribe {
                 return userCtx;
             }
 
-            var chatId = ExtractId(recievedUpdate);
+            isUpdateTypeValid(recievedUpdate, subscriptionPredicate)
+                .Match(
+                    async ok => {
+                        var chatId = ExtractId(ok);
+                        var ctx = ctxs.TryGetValue(chatId, out var userCtx) switch {
+                            false => generateCtx(),
+                            true => userCtx,
+                        };
 
-            var ctx = ctxs.TryGetValue(chatId, out var userCtx) switch {
-                false => generateCtx(),
-                true => userCtx,
-            };
+                        ctx.UpdateHistory.Add(recievedUpdate);
+                        await handler(ctx);
+                    },
+                    err => { }
+                );
 
-            ctx.UpdateHistory.Add(recievedUpdate);
-
-            await handler(ctx);
+            return Task.FromResult(() => { });
         };
     }
 
