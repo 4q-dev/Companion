@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Http.HttpResults;
 using ResultSharp.Core;
 using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
@@ -65,10 +64,7 @@ public static class Subscribe {
                 .Match(
                     async ok => {
                         var chatId = ExtractId(ok);
-                        var ctx = ctxs.TryGetValue(chatId, out var userCtx) switch {
-                            false => generateCtx(),
-                            true => userCtx,
-                        };
+                        var ctx = ctxs.GetOrAdd(chatId, generateCtx());
 
                         ctx.UpdateHistory.Add(recievedUpdate);
                         await handler(ctx);
