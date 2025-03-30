@@ -1,7 +1,6 @@
 ﻿using Bot.Abstractions;
 using Companion.Domain;
 using Companion.Usecase;
-using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -23,7 +22,7 @@ public static class RolesModule {
                         else {
                             await bot.SendMessage(msg.Chat.Id,
                                     "Список ролей: " + String.Join(' ', await roleManagment.GetAllRoles(msg.Chat.Id)));
-                            await roleManagment.NewRole(new Role(Guid.NewGuid(), msg.Chat.Id, "bebra"));
+                            await roleManagment.NewRole(new Role(Guid.NewGuid(), msg.Chat.Id, split[1]));
                             await bot.SendMessage(msg.Chat.Id,
                                     "Роль добавлена! Список ролей: \n" + String.Join(' ', await roleManagment.GetAllRoles(msg.Chat.Id)));
                         }

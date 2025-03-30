@@ -89,7 +89,11 @@ public static class Subscribe {
                             var serviceTypes = handler.Method.GetParameters()
                                .Select(p => p.ParameterType);
                             var services = serviceTypes.Select((type) => ResolveFromContainer(type, ctx));
-                            await (handler.DynamicInvoke(services.ToArray()) as Task);
+                            var task = handler.DynamicInvoke(services.ToArray()) switch {
+                                Task t => t,
+                                _ => Task.CompletedTask
+                            };
+                            await task;
                         });
                     }
                 );
