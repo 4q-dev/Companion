@@ -85,6 +85,7 @@ public static class Subscribe {
                             var chatId = ExtractId(ok);
                             var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
                             ctx.ServiceProvider = scope.ServiceProvider;
+                            ctx.UpdateHistory.Clear(); // хз нужно ли вообще хранить историю апдейтов так что пока так
                             ctx.UpdateHistory.Add(recievedUpdate);
 
                             var serviceTypes = handler.Method.GetParameters()
