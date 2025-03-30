@@ -30,7 +30,7 @@ public static class Subscribe {
     // абсолют сперма
     private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>> predicate, OnUpdateHandler handler)> handlers = [];
 
-    public static ServiceProvider ServiceProvider { get; set; }
+    public static ServiceProvider ServiceProvider { get; set; } = null!;
 
     public static void OnMessage(TelegramBotClient client, String message, Delegate handler)
         => OnMessage(client, (_) => message, handler);
