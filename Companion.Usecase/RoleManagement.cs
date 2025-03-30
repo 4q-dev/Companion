@@ -32,7 +32,7 @@ public class RoleManagement(CompanionDbContext dbContext, TelegramBotClient bot)
         var roles = await dbContext.Roles
             .Where(r => r.TelegramChatId == chatId)
             .ToListAsync();
-        await bot.SendMessage(chatId, $"Вот список всех ролей: {String.Join('\n', roles.Select(r => $"Имя: " + r.Name))}");
+        await bot.SendMessage(chatId, $"Вот список всех ролей: \n{String.Join('\n', roles.Select(r => $"Имя: " + r.Name))}");
     }
 
     public async Task RemoveRole(Int64 chatId, String? input) {

@@ -15,7 +15,14 @@ public static class RolesModule {
 
         Subscribe.OnMessage(
                 static (msg) => msg.Text is not null && msg.Text!.StartsWith("/role_remove", StringComparison.CurrentCulture),
-                static async (Message msg, RoleManagement roleManagment) => await roleManagment.RemoveRole(msg.Chat.Id, msg.Text)
+                static async (Message msg, RoleManagement roleManagment)
+                    => await roleManagment.RemoveRole(msg.Chat.Id, msg.Text)
+        );
+
+        Subscribe.OnMessage(
+                static (msg) => msg.Text is not null && msg.Text!.StartsWith("/role_desc", StringComparison.CurrentCulture),
+                static async (Message msg, RoleManagement roleManagment)
+                    => await roleManagment.GetAllRoles(msg.Chat.Id)
         );
 
         // Subscribe.OnMessage(bot, (msg) => msg.Text is not null && msg.Text!.StartsWith("/role_sub", StringComparison.CurrentCulture), async (ctx) => {
