@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using ResultSharp.Core;
 using ResultSharp.Errors;
 using ResultSharp.Extensions.FunctionalExtensions.Sync;
@@ -11,8 +12,8 @@ namespace Bot.Abstractions;
 
 public interface IState { }
 
-public class UserContext(TelegramBotClient client, IServiceProvider serviceProvider) {
-    public IServiceProvider ServiceProvider => serviceProvider;
+public class UserContext(TelegramBotClient client, ServiceProvider serviceProvider) {
+    public ServiceProvider ServiceProvider => serviceProvider;
 
     public List<Update> UpdateHistory { get; set; } = [];
     public Update RecievedUpdate => UpdateHistory.Last();
@@ -29,7 +30,7 @@ public static class Subscribe {
     // абсолют сперма
     private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>> predicate, OnUpdateHandler handler)> handlers = [];
 
-    public static IServiceProvider ServiceProvider { get; set; }
+    public static ServiceProvider ServiceProvider { get; set; }
 
     public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler)
         => OnMessage(client, (_) => message, handler);
@@ -61,7 +62,7 @@ public static class Subscribe {
         );
 
     public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> checkUpdateType, Func<UserContext, Task> handler) {
-        Task Op(Update recievedUpdate) {
+        handlers.Enqueue((checkUpdateType, (recievedUpdate) => {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> checkUpdateType) {
                 return update is Update u
                     ? checkUpdateType(update)
@@ -75,20 +76,19 @@ public static class Subscribe {
             }
 
             isUpdateTypeValid(recievedUpdate, checkUpdateType)
-                .Then(
-                    async ok => {
+                .OnSuccess(
+                    ok => {
                         var chatId = ExtractId(ok);
                         var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
                         ctx.UpdateHistory.Add(recievedUpdate);
-                        await handler(ctx);
+                        handler(ctx);
                     }
                 );
 
             return Task.CompletedTask;
         }
+        ));
     }
-    // handlers.Enqueue((checkUpdateType, (recievedUpdate) => 
-    // ));
 
     public static void SubscribeAll(TelegramBotClient client) {
         client.OnUpdate += static (update) => {

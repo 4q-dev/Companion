@@ -1,5 +1,6 @@
 ﻿using Bot.Abstractions;
 using Bot.Modules;
+using Companion.Usecase;
 using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 
@@ -7,13 +8,12 @@ LoggingConfigure.ConfigureLogging();
 
 var bot = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!);
 
-RolesModule.Register(bot);
-
 var serviceBuilder = new ServiceCollection();
 serviceBuilder.AddUsecaseServices();
 
 Subscribe.ServiceProvider = serviceBuilder.BuildServiceProvider();
 
+RolesModule.Register(bot);
 Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
     if (ctx.RecievedMessage is not null) {
         await bot.SendMessage(ctx.RecievedMessage.Chat.Id,

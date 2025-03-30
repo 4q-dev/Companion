@@ -1,13 +1,10 @@
 ﻿using Bot.Abstractions;
+using Companion.Domain;
+using Companion.Usecase;
+using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 
 namespace Bot.Modules;
-
-public record Role(String name, List<String> Usernames) {
-    public override String ToString() {
-        return $"Имя роли: {name}. Обладатели: {String.Join(' ', Usernames)}";
-    }
-};
 
 public static class RolesModule {
     public static void Register(TelegramBotClient bot) {
@@ -15,16 +12,19 @@ public static class RolesModule {
                 bot,
                 (msg) => msg.Text is not null && msg.Text!.StartsWith("/role_add", StringComparison.CurrentCulture),
                 async (ctx) => {
-                    // ctx.ServiceProvider.GetService()
-                    // var split = ctx.RecievedMessage.Text.Split(' ', 2, StringSplitOptions.TrimEntries);
-                    // if (split.Length < 2) {
-                    //     await bot.SendMessage(ctx.RecievedMessage!.Chat.Id, "Команда отправлена неверно");
-                    //     return;
-                    // }
-                    // else {
-                    //     roles.Add(new Role(split[1], []));
-                    //     await bot.SendMessage(ctx.RecievedMessage!.Chat.Id, "Роль добавлена! Список ролей: " + String.Join(" ", roles));
-                    // }
+                    var roleManagment = ctx.ServiceProvider.GetService<RoleManagment>();
+                    var split = ctx.RecievedMessage.Text.Split(' ', 2, StringSplitOptions.TrimEntries);
+                    if (split.Length < 2) {
+                        await bot.SendMessage(ctx.RecievedMessage!.Chat.Id, "Команда отправлена неверно");
+                        return;
+                    }
+                    else {
+                        await bot.SendMessage(ctx.RecievedMessage!.Chat.Id,
+                                "Список ролей: " + String.Join(' ', await roleManagment.GetAllRoles(ctx.RecievedMessage.Chat.Id)));
+                        await roleManagment.NewRole(new Role(Guid.NewGuid(), ctx.RecievedMessage.Chat.Id, "bebra"));
+                        await bot.SendMessage(ctx.RecievedMessage!.Chat.Id,
+                                "Роль добавлена! Список ролей: \n" + String.Join(' ', await roleManagment.GetAllRoles(ctx.RecievedMessage.Chat.Id)));
+                    }
                 }
         );
 
