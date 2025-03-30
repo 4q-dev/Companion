@@ -13,7 +13,7 @@ namespace Bot.Abstractions;
 public interface IState { }
 
 public class UserContext(TelegramBotClient client, ServiceProvider serviceProvider) {
-    public ServiceProvider ServiceProvider => serviceProvider;
+    public IServiceProvider ServiceProvider { get; set; } = serviceProvider;
 
     public List<Update> UpdateHistory { get; set; } = [];
     public Update RecievedUpdate => UpdateHistory.Last();
@@ -32,10 +32,10 @@ public static class Subscribe {
 
     public static ServiceProvider ServiceProvider { get; set; }
 
-    public static void OnMessage(TelegramBotClient client, String message, Func<UserContext, Task> handler)
+    public static void OnMessage(TelegramBotClient client, String message, Delegate handler)
         => OnMessage(client, (_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Boolean> isMessageValid, Func<UserContext, Task> handler)
+    public static void OnMessage(TelegramBotClient client, Func<Message, Boolean> isMessageValid, Delegate handler)
         => OnUpdate(client,
             (recievedUpdate) => {
                 if (recievedUpdate.Type == UpdateType.Message) {
@@ -48,7 +48,7 @@ public static class Subscribe {
             handler
         );
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> checkMessage, Func<UserContext, Task> handler)
+    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> checkMessage, Delegate handler)
         => OnUpdate(client,
             (recievedUpdate) => {
                 if (recievedUpdate.Type == UpdateType.Message) {
@@ -61,8 +61,8 @@ public static class Subscribe {
             handler
         );
 
-    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> checkUpdateType, Func<UserContext, Task> handler) {
-        handlers.Enqueue((checkUpdateType, (recievedUpdate) => {
+    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> checkUpdateType, Delegate handler) {
+        Task Beb(Update recievedUpdate) {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> checkUpdateType) {
                 return update is Update u
                     ? checkUpdateType(update)
@@ -78,16 +78,26 @@ public static class Subscribe {
             isUpdateTypeValid(recievedUpdate, checkUpdateType)
                 .OnSuccess(
                     ok => {
-                        var chatId = ExtractId(ok);
-                        var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
-                        ctx.UpdateHistory.Add(recievedUpdate);
-                        handler(ctx);
+                        Task.Run(async () => {
+                            using var scope = ServiceProvider.CreateScope();
+
+                            var chatId = ExtractId(ok);
+                            var ctx = ctxs.GetOrAdd(chatId, (_) => generateCtx());
+                            ctx.ServiceProvider = scope.ServiceProvider;
+                            ctx.UpdateHistory.Add(recievedUpdate);
+
+                            var serviceTypes = handler.Method.GetParameters()
+                               .Select(p => p.ParameterType);
+                            var services = serviceTypes.Select((type) => ResolveFromContainer(type, ctx));
+                            await (handler.DynamicInvoke(services.ToArray()) as Task);
+                        });
                     }
                 );
 
             return Task.CompletedTask;
         }
-        ));
+
+        handlers.Enqueue((checkUpdateType, Beb));
     }
 
     public static void SubscribeAll(TelegramBotClient client) {
@@ -104,6 +114,16 @@ public static class Subscribe {
             }
             return Task.FromResult(static () => { });
         };
+    }
+
+    private static Object? ResolveFromContainer(Type serviceType, UserContext ctx) {
+        if (serviceType == typeof(UserContext)) { return ctx; }
+        if (serviceType == typeof(Message)) { return ctx.RecievedMessage; }
+        else {
+            return ctx.ServiceProvider
+                .GetService(serviceType) is Object obj ? obj :
+                    throw new ArgumentNullException(nameof(serviceType));
+        }
     }
 
     private static Int64 ExtractId(Update update) {

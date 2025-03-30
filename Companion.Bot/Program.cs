@@ -7,14 +7,15 @@ using Telegram.Bot;
 LoggingConfigure.ConfigureLogging();
 
 var bot = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!);
+bot.OnError += (error, source) => { throw error; };
 
 var serviceBuilder = new ServiceCollection();
 serviceBuilder.AddUsecaseServices();
-
 Subscribe.ServiceProvider = serviceBuilder.BuildServiceProvider();
 
 RolesModule.Register(bot);
-Subscribe.OnMessage(bot, "/bebra", async (ctx) => {
+
+Subscribe.OnMessage(bot, "/bebra", async (UserContext ctx) => {
     if (ctx.RecievedMessage is not null) {
         await bot.SendMessage(ctx.RecievedMessage.Chat.Id,
                 String.Join(" ", ctx.UpdateHistory

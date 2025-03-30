@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Companion.Usecase;
 
-public class RoleManagment(CompanionDbContext dbContext) {
+public class RoleManagement(CompanionDbContext dbContext) {
     public async Task NewRole(Role role) {
         dbContext.Roles.Add(role);
         await dbContext.SaveChangesAsync();
