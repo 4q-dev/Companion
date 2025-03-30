@@ -6,21 +6,19 @@ using Telegram.Bot;
 
 LoggingConfigure.ConfigureLogging();
 
-var bot = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!);
-bot.OnError += (error, source) => { throw error; };
-
 var serviceBuilder = new ServiceCollection();
 serviceBuilder.AddUsecaseServices();
+serviceBuilder.AddSingleton(static _ => new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!));
 Subscribe.ServiceProvider = serviceBuilder.BuildServiceProvider();
 
-RolesModule.Register(bot);
+RolesModule.Register();
 
-Subscribe.OnMessage(bot, "/bebra", async (UserContext ctx) => {
+Subscribe.OnMessage("/bebra", static async (TelegramBotClient bot, UserContext ctx) => {
     if (ctx.RecievedMessage is not null) {
         await bot.SendMessage(ctx.RecievedMessage.Chat.Id,
                 String.Join(" ", ctx.UpdateHistory
-                    .FindAll(u => u.Message?.Text is not null)
-                    .Select(u => u.Message!.Text)));
+                    .FindAll(static u => u.Message?.Text is not null)
+                    .Select(static u => u.Message!.Text)));
         await bot.SendMessage(ctx.RecievedMessage.Chat.Id, "бебра отправлена");
     }
 });
@@ -34,6 +32,6 @@ Subscribe.OnMessage(bot, "/bebra", async (UserContext ctx) => {
 //     }
 // });
 
-Subscribe.SubscribeAll(bot);
+Subscribe.SubscribeAll();
 
 Console.ReadLine();

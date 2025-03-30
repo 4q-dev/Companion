@@ -27,30 +27,30 @@ public class UserContext(TelegramBotClient client, ServiceProvider serviceProvid
 }
 
 public static class Subscribe {
+    private static readonly TelegramBotClient client = new TelegramBotClient(Environment.GetEnvironmentVariable("ZAZAGRAM_TOKEN")!);
     private static readonly ConcurrentDictionary<Int64, UserContext> ctxs = [];
     // абсолют сперма
     private static readonly ConcurrentQueue<(Func<Update, Result<UpdateType>> predicate, OnUpdateHandler handler)> handlers = [];
 
     public static ServiceProvider ServiceProvider { get; set; } = null!;
 
-    public static void OnMessage(TelegramBotClient client, String message, Delegate handler)
-        => OnMessage(client, (_) => message, handler);
+    public static void OnMessage(String message, Delegate handler)
+        => OnMessage((_) => message, handler);
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Boolean> isMessageValid, Delegate handler)
-        => OnUpdate(client,
-            (recievedUpdate) => {
-                if (recievedUpdate.Type == UpdateType.Message) {
-                    if (!isMessageValid(recievedUpdate.Message!)) {
-                        return Error.Failure();
-                    }
+    public static void OnMessage(Func<Message, Boolean> isMessageValid, Delegate handler)
+        => OnUpdate((recievedUpdate) => {
+            if (recievedUpdate.Type == UpdateType.Message) {
+                if (!isMessageValid(recievedUpdate.Message!)) {
+                    return Error.Failure();
                 }
-                return recievedUpdate.Type;
-            },
+            }
+            return recievedUpdate.Type;
+        },
             handler
         );
 
-    public static void OnMessage(TelegramBotClient client, Func<Message, Result<String>> checkMessage, Delegate handler)
-        => OnUpdate(client,
+    public static void OnMessage(Func<Message, Result<String>> checkMessage, Delegate handler)
+        => OnUpdate(
             (recievedUpdate) => {
                 if (recievedUpdate.Type == UpdateType.Message) {
                     if (recievedUpdate.Message!.Text != checkMessage(recievedUpdate.Message!)) {
@@ -62,7 +62,7 @@ public static class Subscribe {
             handler
         );
 
-    public static void OnUpdate(TelegramBotClient client, Func<Update, Result<UpdateType>> checkUpdateType, Delegate handler) {
+    public static void OnUpdate(Func<Update, Result<UpdateType>> checkUpdateType, Delegate handler) {
         Task Beb(Update recievedUpdate) {
             static Result<Update> isUpdateTypeValid(Update? update, Func<Update, Result<UpdateType>> checkUpdateType) {
                 return update is Update u
@@ -105,7 +105,7 @@ public static class Subscribe {
         handlers.Enqueue((checkUpdateType, Beb));
     }
 
-    public static void SubscribeAll(TelegramBotClient client) {
+    public static void SubscribeAll() {
         client.OnUpdate += static (update) => {
             foreach (var (predicate, handler) in handlers) {
                 var p = predicate(update);

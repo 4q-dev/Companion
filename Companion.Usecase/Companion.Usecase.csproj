@@ -8,6 +8,7 @@
     <PackageReference Include="4q-dev.ResultSharp" Version="1.0.19" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Telegram.Bot" Version="22.4.4" />
   </ItemGroup>
 
   <PropertyGroup>
