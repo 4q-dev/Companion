@@ -15,6 +15,7 @@ public interface IState { }
 public class UserContext(TelegramBotClient client, ServiceProvider serviceProvider) {
     public IServiceProvider ServiceProvider { get; set; } = serviceProvider;
 
+    // надо как то контролировать рост этого парня
     public List<Update> UpdateHistory { get; set; } = [];
     public Update RecievedUpdate => UpdateHistory.Last();
     public Message? RecievedMessage => UpdateHistory.FindLast(static (u) => u.Type == UpdateType.Message)?.Message;
