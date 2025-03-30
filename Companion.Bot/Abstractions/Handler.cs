@@ -43,7 +43,7 @@ public static class Subscribe {
                         return Error.Failure();
                     }
                 }
-                return UpdateType.Message;
+                return recievedUpdate.Type;
             },
             handler
         );
@@ -123,11 +123,9 @@ public static class Subscribe {
     private static Object? ResolveFromContainer(Type serviceType, UserContext ctx) {
         if (serviceType == typeof(UserContext)) { return ctx; }
         if (serviceType == typeof(Message)) { return ctx.RecievedMessage; }
-        else {
-            return ctx.ServiceProvider
-                .GetService(serviceType) is Object obj ? obj :
-                    throw new ArgumentNullException(nameof(serviceType));
-        }
+
+        return ctx.ServiceProvider.GetService(serviceType) is Object obj ? obj :
+                throw new ArgumentNullException(nameof(serviceType));
     }
 
     private static Int64 ExtractId(Update update) {
