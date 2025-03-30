@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
+using Serilog;
 using ResultSharp.Core;
 using ResultSharp.Errors;
-using Serilog;
 
-namespace Zazagram.Services;
+namespace Companion.Services;
 
 internal static class LlmService {
     private static readonly HttpClient httpClient = ConstructClient();

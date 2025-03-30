@@ -8,12 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="4q-dev.ResultSharp" Version="1.0.16" />
+    <PackageReference Include="4q-dev.ResultSharp" Version="1.0.19" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="Telegram.Bot" Version="22.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Companion.Usecase\Companion.Usecase.csproj" />
   </ItemGroup>
 
 </Project>

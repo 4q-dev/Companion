@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zazagram", "Zazagram\Zazagram.csproj", "{A9F37648-E895-437D-975A-E8408BF4B430}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot", "Companion.Bot\Bot.csproj", "{60FBB6CC-3E22-4171-A9C7-B677BD96E02D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Companion.Domain", "Companion.Domain\Companion.Domain.csproj", "{F31A079C-A98C-4A88-A1EA-B73012F9A4B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Companion.Usecase", "Companion.Usecase\Companion.Usecase.csproj", "{101B4005-DB64-41BB-B08A-708EF530984A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +18,17 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A9F37648-E895-437D-975A-E8408BF4B430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A9F37648-E895-437D-975A-E8408BF4B430}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A9F37648-E895-437D-975A-E8408BF4B430}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A9F37648-E895-437D-975A-E8408BF4B430}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60FBB6CC-3E22-4171-A9C7-B677BD96E02D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60FBB6CC-3E22-4171-A9C7-B677BD96E02D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60FBB6CC-3E22-4171-A9C7-B677BD96E02D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60FBB6CC-3E22-4171-A9C7-B677BD96E02D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F31A079C-A98C-4A88-A1EA-B73012F9A4B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F31A079C-A98C-4A88-A1EA-B73012F9A4B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F31A079C-A98C-4A88-A1EA-B73012F9A4B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F31A079C-A98C-4A88-A1EA-B73012F9A4B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{101B4005-DB64-41BB-B08A-708EF530984A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{101B4005-DB64-41BB-B08A-708EF530984A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{101B4005-DB64-41BB-B08A-708EF530984A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{101B4005-DB64-41BB-B08A-708EF530984A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
