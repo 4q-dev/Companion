@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using ResultSharp.Core;
 using ResultSharp.Errors;
@@ -12,8 +11,8 @@ using static Telegram.Bot.TelegramBotClient;
 namespace Bot.Abstractions;
 
 public interface IState {
-    void PreEnterState(UserContext ctx);
-    void PreExitState(UserContext ctx);
+    void PreEnterState(UserContext ctx) { }
+    void PreExitState(UserContext ctx) { }
 }
 
 public class UserContext(TelegramBotClient client, ServiceProvider serviceProvider) {
