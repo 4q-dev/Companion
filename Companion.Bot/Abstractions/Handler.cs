@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using ResultSharp.Core;
 using ResultSharp.Errors;
@@ -10,7 +11,10 @@ using static Telegram.Bot.TelegramBotClient;
 
 namespace Bot.Abstractions;
 
-public interface IState { }
+public interface IState {
+    void PreEnterState(UserContext ctx);
+    void PreExitState(UserContext ctx);
+}
 
 public class UserContext(TelegramBotClient client, ServiceProvider serviceProvider) {
     public IServiceProvider ServiceProvider { get; set; } = serviceProvider;
@@ -20,8 +24,8 @@ public class UserContext(TelegramBotClient client, ServiceProvider serviceProvid
     public Update RecievedUpdate => UpdateHistory.Last();
     public Message? RecievedMessage => UpdateHistory.FindLast(static (u) => u.Type == UpdateType.Message)?.Message;
 
-    public List<IState> StateHistory { get; set; } = [];
-    public IState CurrentState => StateHistory.Last();
+    // public List<IState> StateHistory { get; set; } = [];
+    public List<IState> currentStates { get; set; } = [];
 
     public TelegramBotClient BotClient => client;
 }
@@ -125,6 +129,7 @@ public static class Subscribe {
     private static Object? ResolveFromContainer(Type serviceType, UserContext ctx) {
         if (serviceType == typeof(UserContext)) { return ctx; }
         if (serviceType == typeof(Message)) { return ctx.RecievedMessage; }
+        if (serviceType == typeof(StateManager)) { return new StateManager(ctx); }
 
         return ctx.ServiceProvider.GetService(serviceType) is Object obj ? obj :
                 throw new ArgumentNullException(nameof(serviceType));
@@ -147,5 +152,16 @@ public static class Subscribe {
             UpdateType.RemovedChatBoost => update.RemovedChatBoost!.Chat.Id,
             _ => throw new ArgumentException("Update doen't contain id")
         };
+    }
+}
+
+public class StateManager(UserContext ctx) {
+    public void EnterState(IState state) {
+        state.PreEnterState(ctx);
+        ctx.currentStates.Add(state);
+    }
+    public void ExitState(IState state) {
+        state.PreExitState(ctx);
+        ctx.currentStates.Remove(state);
     }
 }
